@@ -200,4 +200,34 @@ describe('app-dir - server source maps', () => {
       isNextDev ? 'Error [MyError]: Bar' : 'Error [MyError]: Bar'
     )
   })
+
+  it('handles invalid sourcemaps gracefully', async () => {
+    const outputIndex = next.cliOutput.length
+    await next.render('/bad-sourcemap')
+
+    await retry(() => {
+      expect(normalizeCliOutput(next.cliOutput.slice(outputIndex))).toContain(
+        'GET /bad-sourcemap 200'
+      )
+    })
+
+    if (isTurbopack) {
+      expect(normalizeCliOutput(next.cliOutput.slice(outputIndex))).toContain(
+        // Node.js is fine with invalid URLs in index maps apparently.
+        '' +
+          '\nError: Boom!' +
+          // TODO(veil): Turbopack's sourcemap loader generates a wrong source entry here
+          // Should not be sourcemapped or "custom://[badhost]/app/bad-sourcemap/page.js"
+          '\n    at Page (app/bad-sourcemap/custom:/[badhost]/app/bad-sourcemap/page.js:9:15)' +
+          // TODO: Remove blank line
+          '\n' +
+          '\n GET /bad-sourcemap 200'
+      )
+    } else {
+      // FIXME
+      expect(next.cliOutput.slice(outputIndex)).toContain(
+        'TypeError: The "payload" argument must be of type object. Received null'
+      )
+    }
+  })
 })
