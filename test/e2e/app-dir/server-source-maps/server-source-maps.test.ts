@@ -224,9 +224,15 @@ describe('app-dir - server source maps', () => {
           '\n GET /bad-sourcemap 200'
       )
     } else {
-      // FIXME
-      expect(next.cliOutput.slice(outputIndex)).toContain(
-        'TypeError: The "payload" argument must be of type object. Received null'
+      expect(normalizeCliOutput(next.cliOutput.slice(outputIndex))).toContain(
+        // Node.js is not fine with invalid URLs in vanilla source maps.
+        // Feel free to adjust these locations. They're just here to showcase
+        // sourcemapping is broken on invalid sources.
+        '' +
+          `\nwebpack-internal:///(rsc)/./app/bad-sourcemap/page.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: TypeError [ERR_INVALID_ARG_TYPE]: The "payload" argument must be of type object. Received null` +
+          '\nError: Boom!' +
+          '\n    at Page (webpack-internal:///(rsc)/./app/bad-sourcemap/page.js:15:19)' +
+          '\n GET /bad-sourcemap'
       )
     }
   })
